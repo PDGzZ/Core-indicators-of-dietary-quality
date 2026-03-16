@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外卖消费行为与膳食质量分析 · 膳食核心指标</title>
+    <!-- Chart.js 轻量可视化 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- 现代化字体 Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        body {
+            background: #f4f7fb;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+        .dashboard {
+            max-width: 1300px;
+            width: 100%;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+            padding: 2rem 2rem 2.5rem;
+            transition: all 0.2s ease;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #0b1e33;
+            margin: 0 0 0.2rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .subtitle {
+            font-size: 1rem;
+            color: #54708f;
+            margin-bottom: 2rem;
+            border-left: 4px solid #2d7a9b;
+            padding-left: 1rem;
+            background: #f0f6fa;
+            border-radius: 0 12px 12px 0;
+            line-height: 1.4;
+            width: fit-content;
+            padding: 0.6rem 1.2rem;
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.8rem;
+            margin: 2rem 0 2rem;
+        }
+        .chart-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 1.4rem 1.2rem 1.2rem;
+            box-shadow: 0 8px 20px -6px rgba(0, 32, 64, 0.08);
+            transition: transform 0.15s, box-shadow 0.2s;
+            border: 1px solid rgba(164, 192, 214, 0.25);
+        }
+        .chart-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 28px -8px rgba(21, 76, 122, 0.12);
+            border-color: #cbdbe9;
+        }
+        .chart-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #1a3a4f;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .chart-title span {
+            background: #e2ecf5;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.7rem;
+            color: #1e587b;
+            font-weight: 500;
+        }
+        .canvas-container {
+            position: relative;
+            height: 220px;
+            width: 100%;
+            margin-top: 0.2rem;
+        }
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .analysis-section {
+            background: #f8fbfe;
+            border-radius: 28px;
+            padding: 2rem 2.2rem;
+            margin-top: 2rem;
+            border: 1px solid #d9e6f2;
+            box-shadow: inset 0 1px 3px #ffffff, 0 8px 18px -10px #2c5777;
+        }
+        .analysis-section h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0c3346;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+        .analysis-section h2:after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(90deg, #abc9de, transparent);
+            margin-left: 1.5rem;
+        }
+        .analysis-text {
+            color: #1a3f53;
+            line-height: 1.7;
+            font-size: 1.02rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .analysis-text p {
+            margin: 0;
+        }
+        .insight-badge {
+            background: white;
+            border-radius: 16px;
+            padding: 0.9rem 1.5rem;
+            border-left: 5px solid #3d8f9c;
+            box-shadow: 0 3px 10px rgba(0,30,50,0.05);
+            font-weight: 500;
+        }
+        .footnote {
+            margin-top: 1.8rem;
+            color: #708aa5;
+            font-size: 0.9rem;
+            text-align: right;
+            border-top: 1px dashed #b9d0e2;
+            padding-top: 1rem;
+        }
+        .footnote i {
+            font-style: normal;
+            background: #e1eff9;
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+        }
+        @media (max-width: 700px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+            .dashboard { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <h1>🍱 外卖消费行为与膳食质量分析 · 膳食核心指标</h1>
+    <div class="subtitle">25名高校学生膳食质量分布 (D部分)</div>
+
+    <!-- 四个膳食核心指标图表 (2x2网格) -->
+    <div class="chart-grid">
+        <!-- 荤素搭配 (D4) -->
+        <div class="chart-card">
+            <div class="chart-title">🥩 荤素搭配 <span>D4</span></div>
+            <div class="canvas-container">
+                <canvas id="dietBalanceChart"></canvas>
+            </div>
+        </div>
+        <!-- 早餐习惯 (D5) -->
+        <div class="chart-card">
+            <div class="chart-title">🌅 早餐习惯 <span>D5</span></div>
+            <div class="canvas-container">
+                <canvas id="breakfastChart"></canvas>
+            </div>
+        </div>
+        <!-- 蔬菜水果摄入 (D11) -->
+        <div class="chart-card">
+            <div class="chart-title">🥗 蔬果摄入 <span>D11</span></div>
+            <div class="canvas-container">
+                <canvas id="vegFruitChart"></canvas>
+            </div>
+        </div>
+        <!-- 进餐规律性 (D20) -->
+        <div class="chart-card">
+            <div class="chart-title">⏳ 进餐规律 <span>D20</span></div>
+            <div class="canvas-container">
+                <canvas id="mealRegularChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 文字分析：膳食质量核心指标解读 -->
+    <div class="analysis-section">
+        <h2>🔍 膳食质量核心指标解读</h2>
+        <div class="analysis-text">
+            <p>膳食质量通过四个关键维度衡量：荤素搭配、早餐习惯、蔬菜水果摄入频率以及进餐规律性。以下基于25份有效问卷的统计描述。</p>
+            
+            <div class="insight-badge">
+                <strong>🥩 荤素搭配 (D4)</strong> · 数据显示，<strong>56% (14人)</strong> 的学生能做到“荤素各半”，比例最高；但仍有<strong>28% (7人)</strong> 以“荤食为主”，<strong>16% (4人)</strong> 为“素食为主”。荤食为主的学生可能摄入过多脂肪和蛋白质，而素食为主者需警惕蛋白质和微量元素缺乏。整体来看，超过四成学生搭配不够均衡，存在膳食结构优化空间。
+            </div>
+            
+            <div class="insight-badge">
+                <strong>🌅 早餐习惯 (D5)</strong> · “每天都吃”早餐的学生仅占<strong>24% (6人)</strong>，“有时吃”占32% (8人)，“很少吃”占40% (10人)，“不吃”占4% (1人)。合计<strong>76% (19人)</strong> 的学生未能保证每天食用早餐。早餐规律性差直接影响上午能量供应和认知表现，也是膳食质量不佳的重要信号。
+            </div>
+            
+            <div class="insight-badge">
+                <strong>🥗 蔬菜水果摄入 (D11)</strong> · 每周摄入蔬菜水果“4次及以上”的学生占36% (9人)，“吃3次”占36% (9人)，“吃1~2次”占24% (6人)，“一直没吃”占4% (1人)。参照膳食指南推荐“餐餐有蔬菜，天天吃水果”，仅不足四成学生达到较理想频率（≥4次/周）。蔬果摄入不足会增加微量营养素缺乏及慢性病风险。
+            </div>
+            
+            <div class="insight-badge">
+                <strong>⏳ 进餐规律性 (D20)</strong> · 一日三餐“有规律”的学生仅占24% (6人)，“有一定规律”占60% (15人)，“无规律性”占16% (4人)。高达<strong>76% (19人)</strong> 的学生进餐并非完全规律（包括有一定规律和无规律），这可能与外卖消费、作息不规律等因素相关，也是膳食质量不稳定的表现。
+            </div>
+
+            <p>综合四个维度，当前高校学生的膳食质量普遍存在早餐缺失、蔬果摄入不足、进餐不规律以及荤素搭配失衡等问题。这些指标与后续的外卖消费行为（频率、营养关注度、食品类型偏好）存在潜在关联。例如，外卖频率高的学生可能更倾向于高油高盐食物，进而导致荤素失衡、蔬果摄入减少；不注重营养搭配者早餐习惯和进餐规律性也可能更差。下一步将以外卖行为为分组变量，量化检验上述假设，预期呈现负相关趋势。</p>
+        </div>
+        <div class="footnote">
+            <i>数据基于问卷星收集 · 截止2026.3.13 </i> &nbsp; 图表交互：悬停显示详细数值
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- 荤素搭配 (D4) 柱状图 -----
+        new Chart(document.getElementById('dietBalanceChart'), {
+            type: 'bar',
+            data: {
+                labels: ['荤食为主', '素食为主', '荤素各半'],
+                datasets: [{
+                    label: '人数',
+                    data: [7, 4, 14],
+                    backgroundColor: ['#c17b5c', '#7fae7f', '#5f9fc0'],
+                    borderRadius: 8,
+                    barPercentage: 0.65,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: { backgroundColor: '#0f2a3b' }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 16, grid: { color: '#d9e2ec' }, border: { dash: [4,4] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // ----- 早餐习惯 (D5) 柱状图 (注意顺序与选项对应) -----
+        new Chart(document.getElementById('breakfastChart'), {
+            type: 'bar',
+            data: {
+                labels: ['每天都吃', '有时吃', '很少吃', '不吃'],
+                datasets: [{
+                    label: '人数',
+                    data: [6, 8, 10, 1],
+                    backgroundColor: ['#f1b478', '#e68c7c', '#b5a0b0', '#a77464'],
+                    borderRadius: 8,
+                    barPercentage: 0.65,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0f2a3b' } },
+                scales: {
+                    y: { beginAtZero: true, max: 12, grid: { color: '#d9e2ec' }, border: { dash: [4,4] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // ----- 蔬菜水果摄入 (D11) 柱状图 -----
+        new Chart(document.getElementById('vegFruitChart'), {
+            type: 'bar',
+            data: {
+                labels: ['一直没吃', '1~2次/周', '3次/周', '≥4次/周'],
+                datasets: [{
+                    label: '人数',
+                    data: [1, 6, 9, 9],
+                    backgroundColor: ['#b1c2a1', '#88b98c', '#4f9e7a', '#1e7b5e'],
+                    borderRadius: 8,
+                    barPercentage: 0.65,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0f2a3b' } },
+                scales: {
+                    y: { beginAtZero: true, max: 12, grid: { color: '#d9e2ec' }, border: { dash: [4,4] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // ----- 进餐规律性 (D20) 柱状图 -----
+        new Chart(document.getElementById('mealRegularChart'), {
+            type: 'bar',
+            data: {
+                labels: ['一日三餐有规律', '有一定规律', '无规律性'],
+                datasets: [{
+                    label: '人数',
+                    data: [6, 15, 4],
+                    backgroundColor: ['#7ca9c9', '#4f88b0', '#2f6080'],
+                    borderRadius: 8,
+                    barPercentage: 0.65,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0f2a3b' } },
+                scales: {
+                    y: { beginAtZero: true, max: 18, grid: { color: '#d9e2ec' }, border: { dash: [4,4] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    })();
+</script>
+</body>
+</html>
